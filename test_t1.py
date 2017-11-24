@@ -77,9 +77,43 @@ class TestVolume(unittest.TestCase):
         self.assertEqual(self.arfile.getvalue(), b'foobartleby')
 
 class TestArchive(unittest.TestCase):
+    def setUp(self):
+        self.arfile = io.BytesIO()
+        self.ar = Archive(self.arfile)
+
     def testInit(self):
-        ar = Archive('some_filename')
-        self.assertIsInstance(ar, Archive)
+        self.assertIsInstance(self.ar, Archive)
+
+    def testInclude(self):
+        ar = self.ar
+        foo = io.BytesIO(b'foo')
+        bar = io.BytesIO(b'bar')
+        blort = io.BytesIO(b'blort')
+        self.assertEqual(b'', self.arfile.getvalue())
+        self.assertEqual(0, len(self.ar.ix))
+        ar.include(foo)
+        self.assertEqual(b'foo', self.arfile.getvalue())
+        self.assertEqual(1, len(self.ar.ix))
+        self.assertEqual([(0, 3)],
+                         [self.ar.ix[k] for k in self.ar.ix])
+        ar.include(foo)         # duplicate include
+        self.assertEqual(b'foo', self.arfile.getvalue())
+        self.assertEqual([(0, 3)],
+                         [self.ar.ix[k] for k in self.ar.ix])
+        ar.include(bar)
+        self.assertEqual(b'foobar', self.arfile.getvalue())
+        self.assertEqual(2, len(self.ar.ix))
+        # Assuming that "in" preserves order in Index:
+        self.assertEqual([(0, 3), (3, 3)],
+                         [self.ar.ix[k] for k in self.ar.ix])
+        ar.include(blort)
+        self.assertEqual(b'foobarblort', self.arfile.getvalue())
+        self.assertEqual(3, len(self.ar.ix))
+        # Assuming that "in" preserves order in Index:
+        self.assertEqual([(0, 3), (3, 3), (6, 5)],
+                         [self.ar.ix[k] for k in self.ar.ix])
+
+        print(self.ar.ix.keys())
 
 
 if __name__ == '__main__':

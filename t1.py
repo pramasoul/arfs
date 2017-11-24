@@ -62,9 +62,11 @@ class Archive:
     def include(self, f):
         # Make f included in archive
         ffa = ArF(f)
-        if ffa.k in self.ix:
+        k = ffa.k
+        if k in self.ix:
             return
-        self.vol.append(k, f)
+        start, length = self.vol.append(k, f)
+        self.ix[k] = start, length
 
     def get(self, name):
         # Return a file from name
