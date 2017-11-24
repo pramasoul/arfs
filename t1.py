@@ -53,28 +53,90 @@ class Volume:
         self.arfile.flush()
 
 
-class Archive:
+class KeyValueAppendOnly:       # Abstract
+    def include(self, key, f):
+        # Make file f be included in store
+        raise NotImplementedError
+
+    def get(self, key):
+        # Return a file from key
+        raise NotImplementedError
+
+    def has(self, key):
+        raise NotImplementedError
+
+    def __len__(self):
+        raise NotImplementedError
+
+
+class KVAOUsingDict(KeyValueAppendOnly):
+    def __init__(self):
+        self.d = dict()
+
+    def include(self, key, f):
+        # Make f included in store
+        if key not in self.d:
+            self.d[key] = f.read()
+
+    def get(self, key):
+        # Return a file from key
+        return io.BytesIO(self.d[key])
+
+    def has(self, key):
+        return key in self.d
+
+    def __len__(self):
+        return len(self.d)
+
+
+class KVAOUsingFile(KeyValueAppendOnly):
     def __init__(self, arfile):
         self.arfile = arfile
-        self.ix = Index()
+        self.ix = Index()       # FIXME: s/b in file somehow
         self.vol = Volume(arfile)
 
-    def include(self, f):
-        # Make f included in archive
-        ffa = ArF(f)
-        k = ffa.k
-        if k in self.ix:
+    def include(self, key, f):
+        # Make f included in store
+        if key in self.ix:
             return
-        start, length = self.vol.append(k, f)
-        self.ix[k] = start, length
+        start, length = self.vol.append(key, f)
+        self.ix[key] = start, length
+
+    def get(self, key):
+        # Return a file from key
+        raise NotImplementedError
+
+    def has(self, key):
+        raise NotImplementedError
+
+    def __len__(self):
+        return len(self.ix)
+
+
+class Archive:
+    def include(self, f):
+        # Make f included in store
+        raise NotImplementedError
 
     def get(self, name):
         # Return a file from name
         raise NotImplementedError
 
     def has(self, name):
-        # Is name in archive?
         raise NotImplementedError
+
+
+class ArchiveUsingFile(Archive):
+    def __init__(self, arfile):
+        self.arfile = arfile
+        #self.kvao = KVAOUsingDict() # Testing
+        self.kvao = KVAOUsingFile(arfile) # Testing
+
+    def include(self, f):
+        # Make f included in archive
+        ffa = ArF(f)
+        k = ffa.k
+        self.kvao.include(k, f)
 
 
 def foo(f):
