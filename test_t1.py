@@ -40,21 +40,21 @@ class TestIndex(unittest.TestCase):
 
     def testRecord(self):
         ix = Index()
-        ix.record(b'foo', b'bar')
-        self.assertEqual(b'bar', ix.lookup(b'foo'))
+        ix[b'foo'] = b'bar'
+        self.assertEqual(b'bar', ix[b'foo'])
 
     def testLookup(self):
         ix = Index()
         with self.assertRaises(KeyError):
-            ix.lookup(b'foo')
-        ix.record(b'foo', b'bar')
-        self.assertEqual(b'bar', ix.lookup(b'foo'))
+            ix[b'foo']
+        ix[b'foo'] = b'bar'
+        self.assertEqual(b'bar', ix[b'foo'])
 
     def testHas(self):
         ix = Index()
-        self.assertFalse(ix.has(b'foo'))
-        ix.record(b'foo', b'bar')
-        self.assertTrue(ix.has(b'foo'))
+        self.assertFalse(b'foo' in ix)
+        ix[b'foo'] = b'bar'
+        self.assertTrue(b'foo' in ix)
 
 
 class TestVolume(unittest.TestCase):

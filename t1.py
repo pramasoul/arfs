@@ -29,19 +29,8 @@ class ArF:
         return base64.urlsafe_b64encode(m.digest())
 
 
-class Index:
-    def __init__(self):
-        self.index = dict()
-
-    def has(self, name):
-        return name in self.index
-
-    def lookup(self, name):
-        return self.index[name]
-
-    def record(self, name, value):
-        self.index[name] = value
-
+class Index(dict):
+    pass
 
 class Volume:
     def __init__(self, arfile):
