@@ -4,6 +4,8 @@
 
 import base64
 import hashlib
+import io
+from collections import defaultdict
 
 class ArF:
     def __init__(self, f):
@@ -124,6 +126,32 @@ class Archive:
 
     def has(self, name):
         raise NotImplementedError
+
+
+class ArchiveUsingDict(Archive):
+    def __init__(self):
+        self.kvao = KVAOUsingDict()
+        self.name2key = dict()
+        self.key2names = defaultdict(set)
+
+    def include(self, f):
+        # Make f included in archive
+        ffa = ArF(f)
+        k = ffa.k
+        self.kvao.include(k, f)
+        self.name2key[f.name] = k
+        self.key2names[k].add(f.name)
+
+    def get(self, name):
+        # Return a file from name
+        k = self.name2key[name]
+        return self.kvao.get(k)
+
+    def has(self, name):
+        if name not in self.name2key:
+            return False
+        k = self.name2key[name]
+        return self.kvao.has(k)
 
 
 class ArchiveUsingFile(Archive):

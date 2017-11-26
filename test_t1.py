@@ -5,7 +5,7 @@ import io
 from base64 import b64decode
 from binascii import hexlify
 
-from t1 import Archive, ArchiveUsingFile, KeyValueAppendOnly, KVAOUsingFile, ArF, Index, Volume
+from t1 import Archive, ArchiveUsingDict, ArchiveUsingFile, KeyValueAppendOnly, KVAOUsingFile, ArF, Index, Volume
 
 class TestArF(unittest.TestCase):
     def setUp(self):
@@ -114,6 +114,78 @@ class TestKVAOUsingFile(unittest.TestCase):
                          [self.ar.kvao.ix[k] for k in self.ar.kvao.ix])
 
         #print(self.ar.ix.keys())
+
+
+class TestArchiveUsingDict(unittest.TestCase):
+    def setUp(self):
+        self.ar = ArchiveUsingDict()
+        self.foof = io.BytesIO(b'foo')
+        self.foof.name = 'foof'
+        self.barf = io.BytesIO(b'bar')
+        self.barf.name = 'barf'
+        self.blortf = io.BytesIO(b'blort')
+        self.blortf.name = 'blortf'
+
+    def testInit(self):
+        self.assertIsInstance(self.ar, Archive)
+
+    def testInclude(self):
+        ar = self.ar
+        self.assertFalse(ar.has('foof'))
+        ar.include(self.foof)
+        self.assertTrue(ar.has('foof'))
+
+    def testGet(self):
+        ar = self.ar
+        ar.include(self.foof)
+        f = ar.get('foof')
+        self.assertIsInstance(f, io.IOBase)
+        self.assertEqual(b'foo', f.read())
+
+    def testHas(self):
+        ar = self.ar
+        self.assertFalse(ar.has('foof'))
+        self.assertFalse(ar.has('barf'))
+        self.assertFalse(ar.has('blortf'))
+        self.assertFalse(ar.has('/the/quick/brown/fox'))
+        ar.include(self.foof)
+        self.assertTrue(ar.has('foof'))
+        self.assertFalse(ar.has('barf'))
+        self.assertFalse(ar.has('blortf'))
+        self.assertFalse(ar.has('/the/quick/brown/fox'))
+        ar.include(self.barf)
+        self.assertTrue(ar.has('foof'))
+        self.assertTrue(ar.has('barf'))
+        self.assertFalse(ar.has('blortf'))
+        self.assertFalse(ar.has('/the/quick/brown/fox'))
+        ar.include(self.blortf)
+        self.assertTrue(ar.has('foof'))
+        self.assertTrue(ar.has('barf'))
+        self.assertTrue(ar.has('blortf'))
+        self.assertFalse(ar.has('/the/quick/brown/fox'))
+
+
+    def testMore(self):
+        ar = self.ar
+        self.assertFalse(ar.has('foof'))
+        self.assertFalse(ar.has('barf'))
+        self.assertFalse(ar.has('blortf'))
+        ar.include(self.foof)
+        self.assertTrue(ar.has('foof'))
+        f = ar.get('foof')
+        self.assertIsInstance(f, io.IOBase)
+        self.assertEqual(b'foo', f.read())
+        ar.include(self.barf)
+        self.assertTrue(ar.has('barf'))
+        f = ar.get('barf')
+        self.assertIsInstance(f, io.IOBase)
+        self.assertEqual(b'bar', f.read())
+        ar.include(self.blortf)
+        self.assertTrue(ar.has('blortf'))
+        f = ar.get('blortf')
+        self.assertIsInstance(f, io.IOBase)
+        self.assertEqual(b'blort', f.read())
+
 
 
 if __name__ == '__main__':
