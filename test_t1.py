@@ -10,25 +10,24 @@ from t1 import Archive, ArchiveUsingDict, ArchiveUsingFile, KeyValueAppendOnly, 
 class TestArF(unittest.TestCase):
     def setUp(self):
         self.f = io.BytesIO(b"The quick brown fox jumped over the lazy dog.")
-        self.a = ArF(self.f)
+        self.arf = ArF(self.f)
         # echo -n 'The quick brown fox jumped over the lazy dog.' | openssl dgst -sha25
         self.hexdigest = b'68b1282b91de2c054c36629cb8dd447f12f096d3e3c587978dc2248444633483'
 
     def testInit(self):
-        self.assertIsInstance(self.a, ArF)
+        self.assertIsInstance(self.arf, ArF)
 
     def testKey(self):
-        k = self.a.k
+        k = self.arf.k
         self.assertEqual(hexlify(b64decode(k)), self.hexdigest)
 
-
     def testKeyKeepPos(self):
-        k = self.a.k
+        k = self.arf.k
         self.assertEqual(self.f.read(), b"The quick brown fox jumped over the lazy dog.")
 
-    def testKeyKeepPos(self):
+    def testKeyKeepPosPartialRead(self):
         self.f.read(10)
-        k = self.a.k
+        k = self.arf.k
         self.assertEqual(hexlify(b64decode(k)), self.hexdigest)
         self.assertEqual(self.f.read(), b"The quick brown fox jumped over the lazy dog."[10:])
 

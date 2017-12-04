@@ -11,11 +11,21 @@ class ArF:
     def __init__(self, f):
         self.f = f
 
-    def __getattr__(self, k):
-        if 'k' in self.__dict__:
-            return self.k
-        self.k = self.keyOf(self.f)
-        return self.k
+    def __getattr__(self, attr_name):
+        if attr_name in self.__dict__:
+            return self.__dict__[attr_name]
+        try:
+            getter_fun = self.__class__.__dict__['_get_' + attr_name]
+        except KeyError:
+            raise AttributeError
+        v = self.__dict__[attr_name] = getter_fun(self)
+        return v
+
+    def _get_k(self):
+        return self.keyOf(self.f)
+
+    #def _get_name(self):
+    #    return self.f.name
 
     def keyOf(self, f):
         m = hashlib.sha256()
