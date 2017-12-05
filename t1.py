@@ -24,8 +24,8 @@ class ArF:
     def _get_k(self):
         return self.keyOf(self.f)
 
-    #def _get_name(self):
-    #    return self.f.name
+    def _get_name(self):
+        return self.f.name
 
     def keyOf(self, f):
         m = hashlib.sha256()
@@ -149,8 +149,8 @@ class ArchiveUsingDict(Archive):
         ffa = ArF(f)
         k = ffa.k
         self.kvao.include(k, f)
-        self.name2key[f.name] = k
-        self.key2names[k].add(f.name)
+        self.name2key[ffa.name] = k
+        self.key2names[k].add(ffa.name)
 
     def get(self, name):
         # Return a file from name
