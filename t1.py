@@ -119,7 +119,7 @@ class KVAOUsingFile(KeyValueAppendOnly):
         raise NotImplementedError
 
     def has(self, key):
-        raise NotImplementedError
+        return key in self.ix
 
     def __len__(self):
         return len(self.ix)
@@ -138,9 +138,8 @@ class Archive:
         raise NotImplementedError
 
 
-class ArchiveUsingDict(Archive):
+class ArchiveUsing(Archive):
     def __init__(self):
-        self.kvao = KVAOUsingDict()
         self.name2key = dict()
         self.key2names = defaultdict(set)
 
@@ -164,17 +163,18 @@ class ArchiveUsingDict(Archive):
         return self.kvao.has(k)
 
 
-class ArchiveUsingFile(Archive):
+class ArchiveUsingDict(ArchiveUsing):
+    def __init__(self):
+        self.kvao = KVAOUsingDict()
+        super().__init__()
+
+
+class ArchiveUsingFile(ArchiveUsing):
     def __init__(self, arfile):
         self.arfile = arfile
         #self.kvao = KVAOUsingDict() # Testing
         self.kvao = KVAOUsingFile(arfile) # Testing
-
-    def include(self, f):
-        # Make f included in archive
-        ffa = ArF(f)
-        k = ffa.k
-        self.kvao.include(k, f)
+        super().__init__()
 
 
 def foo(f):
