@@ -140,7 +140,7 @@ class Archive:
 
 class ArchiveUsing(Archive):
     def __init__(self):
-        self.name2key = dict()
+        self.name2key = defaultdict(list)
         self.key2names = defaultdict(set)
 
     def include(self, f):
@@ -148,18 +148,18 @@ class ArchiveUsing(Archive):
         ffa = ArF(f)
         k = ffa.k
         self.kvao.include(k, f)
-        self.name2key[ffa.name] = k
+        self.name2key[ffa.name].append(k)
         self.key2names[k].add(ffa.name)
 
     def get(self, name):
         # Return a file from name
-        k = self.name2key[name]
+        k = self.name2key[name][-1] # the last one added
         return self.kvao.get(k)
 
     def has(self, name):
         if name not in self.name2key:
             return False
-        k = self.name2key[name]
+        k = self.name2key[name][-1] # the last one added
         return self.kvao.has(k)
 
 

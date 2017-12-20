@@ -5,7 +5,9 @@ import io
 from base64 import b64decode
 from binascii import hexlify
 
-from t1 import Archive, ArchiveUsingDict, ArchiveUsingFile, KeyValueAppendOnly, KVAOUsingFile, ArF, Index, Volume
+from t1 import Archive, ArchiveUsingDict, ArchiveUsingFile, \
+    KeyValueAppendOnly, KVAOUsingDict, KVAOUsingFile, \
+    ArF, Index, Volume
 
 
 class TestArF(unittest.TestCase):
@@ -80,51 +82,60 @@ class TestVolume(unittest.TestCase):
         self.assertEqual(l, 8)
         self.assertEqual(self.arfile.getvalue(), b'foobartleby')
 
-class TestKVAOUsingFile(unittest.TestCase):
+class TestKVAO(unittest.TestCase):
     def setUp(self):
         self.arfile = io.BytesIO()
-        self.ar = ArchiveUsingFile(self.arfile)
+        self.kvaoUsingFile = KVAOUsingFile(self.arfile)
+        self.kvaoUsingDict = KVAOUsingDict()
+        self.kvaos = [self.kvaoUsingDict, self.kvaoUsingFile]
 
     def testInit(self):
-        self.assertIsInstance(self.ar, Archive)
+        for kv in self.kvaos:
+            with self.subTest(kv=kv):
+                self.assertIsInstance(kv, KeyValueAppendOnly)
 
     def testInclude(self):
-        ar = self.ar
-        foo = io.BytesIO(b'foo')
-        bar = io.BytesIO(b'bar')
-        blort = io.BytesIO(b'blort')
-        self.assertEqual(b'', self.arfile.getvalue())
-        self.assertEqual(0, len(self.ar.kvao))
-        ar.include(foo)
-        self.assertEqual(b'foo', self.arfile.getvalue())
-        self.assertEqual(1, len(self.ar.kvao))
-        self.assertEqual([(0, 3)],
-                         [self.ar.kvao.ix[k] for k in self.ar.kvao.ix])
-        ar.include(foo)         # duplicate include
-        self.assertEqual(b'foo', self.arfile.getvalue())
-        self.assertEqual([(0, 3)],
-                         [self.ar.kvao.ix[k] for k in self.ar.kvao.ix])
-        ar.include(bar)
-        self.assertEqual(b'foobar', self.arfile.getvalue())
-        self.assertEqual(2, len(self.ar.kvao))
-        # Assuming that "in" preserves order in Index:
-        self.assertEqual([(0, 3), (3, 3)],
-                         [self.ar.kvao.ix[k] for k in self.ar.kvao.ix])
-        ar.include(blort)
-        self.assertEqual(b'foobarblort', self.arfile.getvalue())
-        self.assertEqual(3, len(self.ar.kvao))
-        # Assuming that "in" preserves order in Index:
-        self.assertEqual([(0, 3), (3, 3), (6, 5)],
-                         [self.ar.kvao.ix[k] for k in self.ar.kvao.ix])
-
-        #print(self.ar.ix.keys())
+        for kv in self.kvaos:
+            with self.subTest(kv=kv):
+                foo = io.BytesIO(b'foo')
+                #foo.name = 'foof'
+                bar = io.BytesIO(b'bar')
+                #bar.name = 'barf'
+                blort = io.BytesIO(b'blort')
+                #blort.name = 'blortf'
+                self.assertFalse(kv.has('fook'))
+                self.assertFalse(kv.has('bark'))
+                self.assertFalse(kv.has('blortk'))
+                self.assertEqual(0, len(kv))
+                kv.include('fook', foo)
+                self.assertTrue(kv.has('fook'))
+                self.assertFalse(kv.has('bark'))
+                self.assertFalse(kv.has('blortk'))
+                self.assertEqual(b'foo', kv.get('fook').read())
+                self.assertEqual(1, len(kv))
+                kv.include('fook', foo)         # duplicate include
+                self.assertEqual(b'foo', kv.get('fook').read())
+                kv.include('bark', bar)
+                self.assertTrue(kv.has('fook'))
+                self.assertTrue(kv.has('bark'))
+                self.assertFalse(kv.has('blortk'))
+                self.assertEqual(b'bar', kv.get('bark').read())
+                self.assertEqual(2, len(kv))
+                kv.include('blortk', blort)
+                self.assertTrue(kv.has('fook'))
+                self.assertTrue(kv.has('bark'))
+                self.assertTrue(kv.has('blortk'))
+                self.assertEqual(b'blort', kv.get('blortk').read())
+                self.assertEqual(3, len(kv))
+                return
 
 
 class TestArchive(unittest.TestCase):
     def setUp(self):
         self.ar = self.arud = ArchiveUsingDict()
         self.aruf = ArchiveUsingFile(io.BytesIO())
-        self.archives = [self.arud, self.aruf]
+        #self.archives = [self.arud, self.aruf]
+        self.archives = [self.arud] # DEBUG
         self.foof = io.BytesIO(b'foo')
         self.foof.name = 'foof'
         self.barf = io.BytesIO(b'bar')
